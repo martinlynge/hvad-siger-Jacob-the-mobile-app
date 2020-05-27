@@ -1,42 +1,63 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Button, Text } from 'react-native';
+import { StyleSheet, View, Button, Text, Image } from 'react-native';
 import * as Speech from 'expo-speech';
-import * as Location from 'expo-location';
+
+function randomAnswer() {
+  const min = 1;
+  const max = 4;
+
+  return Math.floor(Math.random() * (+max - +min)) + +min;
+}
+
+const answers = [
+  {
+    answer: 'Ja',
+    image: <Image source={require('./images/jakob_yes.jpg')} />,
+  },
+  {
+    answer: 'Nej',
+    image: <Image source={require('./images/jakob_no.jpg')} />,
+  },
+  {
+    answer: 'Ved ikke',
+    image: <Image source={require('./images/jakob_does_not_know.jpg')} />,
+  },
+];
 
 export default function App() {
-  const [location, setLocation] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
-  const [textToSpeech, setTextToSpeech] = useState("I'm getting your location");
-  const [speak, setSpeak] = useState(false);
+  const initialResult = answers[randomAnswer() - 1];
+  const [textToSpeech, setTextToSpeech] = useState(
+    `Jakob siger ${initialResult.answer}`
+  );
+  const [toggle, setToggle] = useState(false);
+  const [image, setImage] = useState(initialResult.image);
+  const [answer, setAnswer] = useState(initialResult.answer);
 
   useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
-      }
-
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
-      });
-      console.log(location);
-      setLocation(`${location.coords.latitude}, ${location.coords.longitude}`);
-      setTextToSpeech(
-        `Lat: ${location.coords.latitude}, Long: ${location.coords.longitude}`
-      );
-    })();
-  });
+    Speech.speak(textToSpeech);
+  }, [toggle]);
 
   const handleSpeak = () => {
-    if (location) setSpeak(true);
+    setToggle(!toggle);
 
-    Speech.speak(textToSpeech);
+    const result = answers[randomAnswer() - 1];
+
+    setAnswer(result.answer);
+
+    setImage(result.image);
+
+    setTextToSpeech(`Jakob siger ${result.answer}`);
   };
 
   return (
     <View style={styles.container}>
-      <Button title="What's my location" onPress={handleSpeak} />
-      {speak && <Text style={styles.welcome}>{textToSpeech}</Text>}
+      <Button title="Hvad siger Jakob?" onPress={handleSpeak} />
+      {image ? image : null}
+      {textToSpeech ? (
+        <Text style={styles.answer}>
+          Jacob siger: <Text style={{ fontWeight: 'bold' }}>{answer}</Text>
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -48,7 +69,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F5FCFF',
   },
-  welcome: {
+  answer: {
     fontSize: 20,
     textAlign: 'center',
     margin: 10,
